@@ -21,23 +21,39 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIDAR_OBSTACLE_DETECTION_KD_TREE_HPP
-#define LIDAR_OBSTACLE_DETECTION_KD_TREE_HPP
+#ifndef LIDAR_OBSTACLE_DETECTION_KDTREE_HPP
+#define LIDAR_OBSTACLE_DETECTION_KDTREE_HPP
 
 #include <cstdlib>
 #include <cmath>
 #include <memory>
 #include <vector>
+#include <random>
+#include <iostream>
 #include <Eigen/Dense>
+
 
 namespace ser94mor::lidar_obstacle_detection
 {
 
+  /**
+   * A data structure representing the KD-Tree. Implements "Insert" and "Search" operations.
+   * @tparam dims a number of dimentions, that is, "K" from the KD-Tree
+   * @tparam id_type a type of the point identifier
+   */
   template<size_t dims, typename id_type = uint64_t>
   class KDTree
   {
   public:
 
+    enum ConstructionWay
+    {
+      AS_IS, SHUFFLE, SORT,
+    };
+
+    /**
+     * A data structure representing the k-dimensional point.
+     */
     struct KDPoint
     {
       using vector_type = Eigen::Matrix<double_t, dims, 1>;
@@ -81,6 +97,9 @@ namespace ser94mor::lidar_obstacle_detection
     using vector_type = typename point_type::vector_type;
 
   private:
+    /**
+     * A data structure representing the KD-Tree's node.
+     */
     class KDNode
     {
     private:
@@ -122,11 +141,53 @@ namespace ser94mor::lidar_obstacle_detection
 
   public:
 
+    /**
+     * Constructor.
+     */
     KDTree() : root_{nullptr}
     {
 
     }
 
+    /**
+     * Constructor.
+     */
+    KDTree(std::vector<point_type>& points, ConstructionWay construction_way) : root_{nullptr}
+    {
+      switch (construction_way)
+      {
+        case AS_IS:
+        {
+          break;
+        }
+        case SHUFFLE:
+        {
+          std::random_device rd;
+          std::mt19937 g(rd());
+          std::shuffle(points.begin(), points.end(), g);
+          break;
+        }
+        case SORT:
+        {
+          throw std::logic_error(
+              "a balanced k-d tree construction (when points are sorted by each dimension) is not implemented yet");
+        }
+        default:
+        {
+          throw std::logic_error("construction for the given ConstructionWay is not implemented");
+        }
+      }
+
+      for (auto& point : points)
+      {
+        this->Insert(point);
+      }
+    }
+
+    /**
+     * Insert the K-dimensional point into the KDTree.
+     * @param kd_point K-dimensional point
+     */
     void Insert(const point_type& kd_point)
     {
 
@@ -144,6 +205,13 @@ namespace ser94mor::lidar_obstacle_detection
       }
     }
 
+    /**
+     * Search the KD-Tree for the points lying in the k-dimensional sphere with the center {@param target_point}
+     * and radius {@param distance_tolerance}.
+     * @param target_point a K-dimensional point, the center of the sphere
+     * @param distance_tolerance the K-dimensional sphere radius
+     * @return a vector of point identifiers that lie inside the K-dimensional sphere
+     */
     std::vector<id_type> Search(const vector_type& target_point, const double_t distance_tolerance) const
     {
       std::vector<id_type> ids;
@@ -153,14 +221,26 @@ namespace ser94mor::lidar_obstacle_detection
       return std::move(ids);
     }
 
+    /**
+     * @return Pointer to the KD-Tree's root node.
+     */
     const std::unique_ptr<node_type>& Root() const
     {
       return root_;
     }
 
   private:
-    std::unique_ptr<node_type> root_;
+    std::unique_ptr<node_type> root_; // the root node
 
+    /**
+     * The main logic of the "Search" operation of the KD-Tree.
+     *
+     * @param ids a vector where to store point indices
+     * @param node the node to consider during the given "SearchInternal" invocation
+     * @param depth the depth of the {@param node}
+     * @param target_point the K-dimensional point, i.e., the center of the search sphere
+     * @param distance_tolerance the radius of the K-dimensional search sphere
+     */
     void SearchInternal(std::vector<id_type>& ids,
                         const std::unique_ptr<node_type>& node,
                         const size_t depth,
@@ -182,4 +262,4 @@ namespace ser94mor::lidar_obstacle_detection
   };
 }
 
-#endif //LIDAR_OBSTACLE_DETECTION_KD_TREE_HPP
+#endif //LIDAR_OBSTACLE_DETECTION_KDTREE_HPP

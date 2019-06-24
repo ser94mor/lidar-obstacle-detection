@@ -13,12 +13,13 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (lidar_obstacle_detection src/main.cpp src/kd_tree.hpp)
+add_executable (lidar_obstacle_detection src/main.cpp src/render/render.cpp)
+target_link_libraries (lidar_obstacle_detection ${PCL_LIBRARIES})
 
 add_library(Catch INTERFACE)
 add_executable(lidar_obstacle_detection_test
         test/kd_tree_test.cpp
-        test/test.cpp)
+        test/test.cpp test/euclidean_cluster_extraction_test.cpp)
 target_link_libraries(lidar_obstacle_detection_test Catch)
 
 enable_testing()
