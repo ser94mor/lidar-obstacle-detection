@@ -54,10 +54,16 @@ namespace ser94mor::lidar_obstacle_detection
   class PointCloudProcessor
   {
   private:
+    // flag determining which implementation of RANSAC, Euclidean clustering, and k-d tree to use
     bool use_pcl_;
   public:
 
-    PointCloudProcessor(bool use_pcl) : use_pcl_{use_pcl}
+    /**
+     * Constructor.
+     * @param use_pcl flag indicating whether to use PCL library implementations of RANSAC,
+     * Euclidean clustering, and k-d tree algorithms or not
+     */
+    explicit PointCloudProcessor(bool use_pcl) : use_pcl_{use_pcl}
     {}
 
     /**
@@ -116,30 +122,23 @@ namespace ser94mor::lidar_obstacle_detection
     Clustering(const PCPtr<PointT>& cloud, double_t cluster_tolerance, size_t min_size, size_t max_size) const;
 
     /**
-     *
-     * @param cloud
-     * @return
+     * Determine coordinates of a bounding box around the point cloud.
+     * @param cluster_cloud the point cloud
+     * @return a Box object containing bounding box coordinates
      */
-    Box BoundingBox(const PCPtr<PointT>& cloud) const;
+    Box BoundingBox(const PCPtr<PointT>& cluster_cloud) const;
 
     /**
-     *
-     * @param cloud
-     * @param file
-     */
-    void SavePcdFile(const PCPtr<PointT>& cloud, const std::string& file) const;
-
-    /**
-     *
-     * @param file
-     * @return
+     * Loads a *.pcd file and returns a point cloud.
+     * @param file path to a *.pcd file
+     * @return a point cloud
      */
     PCPtr<PointT> ReadPcdFile(const std::string& file) const;
 
     /**
-     *
-     * @param data_path
-     * @return
+     * Get a vector of *.pcd file paths.
+     * @param data_path path to directory with *.pcd files
+     * @return a vector of *.pcd file paths from {@param data_path}
      */
     std::vector<boost::filesystem::path> ListPcdFiles(const std::string& data_path) const;
 
@@ -373,15 +372,6 @@ namespace ser94mor::lidar_obstacle_detection
             maxPoint.x, maxPoint.y, maxPoint.z};
 
     return box;
-  }
-
-
-  template<typename PointT>
-  void PointCloudProcessor<PointT>::SavePcdFile(const PCPtr<PointT>& cloud, const std::string& file) const
-  {
-    pcl::io::savePCDFileASCII(file, *cloud);
-    std::cout << "[PointCloudProcessor<PointT>::SavePcdFile] Saved "
-              << cloud->points.size() << " data points to " << file << std::endl;
   }
 
 

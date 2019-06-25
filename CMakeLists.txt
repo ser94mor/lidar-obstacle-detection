@@ -17,10 +17,7 @@ add_executable (lidar_obstacle_detection src/main.cpp src/Renderer.cpp)
 target_link_libraries (lidar_obstacle_detection ${PCL_LIBRARIES})
 
 add_library(Catch INTERFACE)
-add_executable(lidar_obstacle_detection_test
-        test/kd_tree_test.cpp
-        test/test.cpp test/euclidean_cluster_extraction_test.cpp)
+add_executable(lidar_obstacle_detection_test test/kd_tree_test.cpp test/test.cpp)
 target_link_libraries(lidar_obstacle_detection_test Catch)
-
 enable_testing()
 add_test( NAME lidar_obstacle_detection_test COMMAND lidar_obstacle_detection_test )
