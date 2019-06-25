@@ -21,7 +21,7 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "render/render.h"
+#include "Renderer.hpp"
 #include "PointCloudProcessor.hpp"
 
 #include <iostream>
@@ -42,67 +42,42 @@
 
 using namespace ser94mor::lidar_obstacle_detection;
 
-using PointProcessorPCL = PointCloudProcessor<pcl::PointXYZI, true>;
-using PointProcessorNOPCL = PointCloudProcessor<pcl::PointXYZI, false>;
-
-
-void init_camera(CameraAngle setAngle, pcl::visualization::PCLVisualizer::Ptr& viewer)
+template <typename PointT>
+void ProcessAndRenderPointCloud(Renderer& renderer,
+                                const PointCloudProcessor<PointT>& point_processor,
+                                const typename pcl::PointCloud<PointT>::Ptr& input_cloud)
 {
+  auto filterCloud =
+      point_processor.FilterCloud(input_cloud, 0.5f, Eigen::Vector4f(-10, -6, -3, 1), Eigen::Vector4f(20, 6, 3, 1));
 
-  viewer->setBackgroundColor (0, 0, 0);
+  auto segmentCloud = point_processor.SegmentPlane(filterCloud, 100, 0.2);
 
-  // set camera position and angle
-  viewer->initCameraParameters();
-  // distance away in meters
-  int distance = 16;
+  renderer.RenderPointCloud(segmentCloud.second, "planeCloud", Color(0,1,0));
 
-  switch(setAngle)
-  {
-    case XY : viewer->setCameraPosition(-distance, -distance, distance, 1, 1, 0); break;
-    case TopDown : viewer->setCameraPosition(0, 0, distance, 1, 0, 1); break;
-    case Side : viewer->setCameraPosition(0, -distance, 0, 0, 0, 1); break;
-    case FPS : viewer->setCameraPosition(-10, 0, 0, 0, 0, 1);
-  }
-
-  if(setAngle!=FPS)
-    viewer->addCoordinateSystem (1.0);
-}
-
-void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, PointCloudProcessor<pcl::PointXYZI, false> pointProcessorI, const pcl::PointCloud<pcl::PointXYZI>::Ptr& inputCloud)
-{
-  // ----------------------------------------------------
-  // -----Open 3D viewer and display City Block     -----
-  // ----------------------------------------------------
-
-  auto filterCloud = pointProcessorI.FilterCloud(inputCloud, 0.5f, Eigen::Vector4f (-10, -6, -3, 1), Eigen::Vector4f ( 20, 6, 3, 1));
-  //renderPointCloud(viewer,filterCloud,"filterCloud");
-
-  auto segmentCloud = pointProcessorI.SegmentPlane(filterCloud, 100, 0.2);
-  //renderPointCloud(viewer,segmentCloud.first,"obstCloud",Color(1,0,0));
-  renderPointCloud(viewer,segmentCloud.second,"planeCloud",Color(0,1,0));
-
-  std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloudClusters = pointProcessorI.Clustering(segmentCloud.first, 0.55, 10, 1000);
+  std::vector<typename pcl::PointCloud<PointT>::Ptr> cloudClusters =
+      point_processor.Clustering(segmentCloud.first, 0.7, 10, 1000);
 
   int clusterId = 0;
   std::vector<Color> colors = {Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 
 
 
-  for(const pcl::PointCloud<pcl::PointXYZI>::Ptr& cluster : cloudClusters)
+  for(const auto& cluster : cloudClusters)
   {
     std::cout << "cluster size ";
-    pointProcessorI.NumberOfPointsIn(cluster);
-    renderPointCloud(viewer,cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId % colors.size()]);
-    Box box = pointProcessorI.BoundingBox(cluster);
-    renderBox(viewer,box,clusterId);
+    point_processor.NumberOfPointsIn(cluster);
+    renderer.RenderPointCloud(cluster,"obstCloud"+std::to_string(clusterId),colors[clusterId % colors.size()]);
+    Box box = point_processor.BoundingBox(cluster);
+    renderer.RenderBox(box, clusterId);
     ++clusterId;
   }
-
 
 }
 
 int main(int argc, char* argv[])
 {
+  using PointT = pcl::PointXYZI;
+
   // handle input arguments; notice that the validity of the arguments themselves is not checked, only their number
   if (argc != 1 and argc != 3)
   {
@@ -123,32 +98,29 @@ int main(int argc, char* argv[])
             << "Use PCL algorithms: " << std::boolalpha << use_pcl
             << std::endl;
 
-  pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
+  Renderer renderer;
+  renderer.InitCamera(CameraAngle::XY);
 
-  CameraAngle setAngle = FPS;
-  init_camera(setAngle, viewer);
-  auto pointProcessorI = PointCloudProcessor<pcl::PointXYZI, false>();
-  std::vector<boost::filesystem::path> stream = pointProcessorI.StreamPcd(pcd_data_dir);
+  auto point_processor = PointCloudProcessor<PointT>(use_pcl);
+  std::vector<boost::filesystem::path> stream = point_processor.ListPcdFiles(pcd_data_dir);
   auto streamIterator = stream.begin();
-  pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloudI;
-  //cityBlock(viewer, pointProcessorI, inputCloudI);
+  pcl::PointCloud<PointT>::Ptr input_cloud;
 
-  while (!viewer->wasStopped ())
+  while (not renderer.WasViewerStopped())
   {
     // Clear viewer
-    viewer->removeAllPointClouds();
-    viewer->removeAllShapes();
+    renderer.ClearViewer();
 
     // Load pcd and run obstacle detection process
-    inputCloudI = pointProcessorI.LoadPcd(streamIterator->string());
-    cityBlock(viewer, pointProcessorI, inputCloudI);
-    //renderPointCloud(viewer,inputCloudI,"planeCloud");
+    input_cloud = point_processor.ReadPcdFile(streamIterator->string());
+    ProcessAndRenderPointCloud(renderer, point_processor, input_cloud);
+    //renderPointCloud(viewer,input_cloud,"planeCloud");
 
     streamIterator++;
     if(streamIterator == stream.end())
       streamIterator = stream.begin();
 
-    viewer->spinOnce ();
+    renderer.SpinViewerOnce();
   }
 
 

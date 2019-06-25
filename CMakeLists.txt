@@ -13,7 +13,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (lidar_obstacle_detection src/main.cpp src/render/render.cpp)
+add_executable (lidar_obstacle_detection src/main.cpp src/Renderer.cpp)
 target_link_libraries (lidar_obstacle_detection ${PCL_LIBRARIES})
 
 add_library(Catch INTERFACE)

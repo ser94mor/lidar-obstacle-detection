@@ -98,7 +98,8 @@ namespace ser94mor::lidar_obstacle_detection
       }
     }
 
-    std::cout << "SIZE: " << clusters.size() << std::endl;
+    std::cout << "[EuclideanClusterExtraction<dims, id_type>::Extract] There are " << clusters.size()
+              << " clusters found." << std::endl;
 
     return clusters;
   }

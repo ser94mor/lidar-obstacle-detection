@@ -88,7 +88,7 @@ namespace ser94mor::lidar_obstacle_detection
 
       d = -(a * cloud->points[i1].x + b * cloud->points[i1].y + c * cloud->points[i1].z);
 
-      for (int i = 0; i < cloud->points.size(); ++i) {
+      for (size_t i = 0; i < cloud->points.size(); ++i) {
         if (distance(cloud->points[i].x, cloud->points[i].y, cloud->points[i].z) < distance_tolerance) {
           inliers.emplace(i);
         }

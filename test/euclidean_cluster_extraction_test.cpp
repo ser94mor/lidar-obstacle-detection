@@ -46,7 +46,7 @@ TEST_CASE("EuclideanClusterExtraction<3>::Extract", "[EuclideanClusterExtraction
       {9, vector_type(7.5, 16, 11)},
   };
 
-  auto result{euclideanclusterextraction_type::Extract(points, 1.0)};
+  auto result{euclideanclusterextraction_type::Extract(points, 3.0, 1, 10)};
 
   for (auto& cluster : result)
   {

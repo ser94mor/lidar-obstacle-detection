@@ -24,7 +24,7 @@
 #ifndef LIDAR_OBSTACLE_DETECTION_POINTCLOUDPROCESSOR_HPP
 #define LIDAR_OBSTACLE_DETECTION_POINTCLOUDPROCESSOR_HPP
 
-#include "render/box.h"
+#include "Box.hpp"
 #include "Ransac.hpp"
 #include "EuclideanClusterExtraction.hpp"
 
@@ -50,17 +50,22 @@ namespace ser94mor::lidar_obstacle_detection
    * Template class containing different utility methods for working with point clouds.
    * @tparam PointT the type of points in the point cloud (from PCL library)
    */
-  template<typename PointT, bool use_pcl = false>
+  template<typename PointT>
   class PointCloudProcessor
   {
+  private:
+    bool use_pcl_;
   public:
+
+    PointCloudProcessor(bool use_pcl) : use_pcl_{use_pcl}
+    {}
 
     /**
      * Get number of points in the point cloud
      * @param cloud the point cloud of interest
      * @return the number of points in the point cloud
      */
-    static size_t NumberOfPointsIn(const PCPtr<PointT>& cloud);
+    size_t NumberOfPointsIn(const PCPtr<PointT>& cloud) const;
 
     /**
      * Filter the initial point cloud, so that the resulting point cloud is ready for further processing.
@@ -73,11 +78,11 @@ namespace ser94mor::lidar_obstacle_detection
      * @param max_point
      * @return the pointer to filtered point cloud
      */
-    static PCPtr<PointT>
+    PCPtr<PointT>
     FilterCloud(const PCPtr<PointT>& cloud,
                 double_t voxel_grid_leaf_size,
                 const Eigen::Vector4f& min_point,
-                const Eigen::Vector4f& max_point);
+                const Eigen::Vector4f& max_point) const;
 
     /**
      * Separates the road from obstacles.
@@ -85,8 +90,8 @@ namespace ser94mor::lidar_obstacle_detection
      * @param cloud cloud to separate
      * @return a pair, where the first point cloud is an obstacle point cloud and the second one is a road point cloud
      */
-    static std::pair<PCPtr<PointT>, PCPtr<PointT>>
-    SeparateClouds(const pcl::PointIndices::Ptr& inliers, const PCPtr<PointT>& cloud);
+    std::pair<PCPtr<PointT>, PCPtr<PointT>>
+    SeparateClouds(const pcl::PointIndices::Ptr& inliers, const PCPtr<PointT>& cloud) const;
 
     /**
      * Perform segmentation on the given point cloud using the RANSAC algorithm.
@@ -96,8 +101,8 @@ namespace ser94mor::lidar_obstacle_detection
      *                           value will be included into the road plane
      * @return a pair, where the first point cloud is an obstacle point cloud and the second one is a road point cloud
      */
-    static std::pair<PCPtr<PointT>, PCPtr<PointT>>
-    SegmentPlane(const PCPtr<PointT>& cloud, size_t max_iterations, double_t distance_threshold);
+    std::pair<PCPtr<PointT>, PCPtr<PointT>>
+    SegmentPlane(const PCPtr<PointT>& cloud, size_t max_iterations, double_t distance_threshold) const;
 
     /**
      * Split the input cloud to several clusters based on the Euclidean clustering algorithm.
@@ -107,33 +112,53 @@ namespace ser94mor::lidar_obstacle_detection
      * @param max_size the maximum cluster size
      * @return the vector of clusters extracted from the given point cloud
      */
-    static std::vector<PCPtr<PointT>>
-    Clustering(const PCPtr<PointT>& cloud, double_t cluster_tolerance, size_t min_size, size_t max_size);
+    std::vector<PCPtr<PointT>>
+    Clustering(const PCPtr<PointT>& cloud, double_t cluster_tolerance, size_t min_size, size_t max_size) const;
 
-    static Box BoundingBox(const PCPtr<PointT>& cloud);
+    /**
+     *
+     * @param cloud
+     * @return
+     */
+    Box BoundingBox(const PCPtr<PointT>& cloud) const;
 
-    static void SavePcd(const PCPtr<PointT>& cloud, const std::string& file);
+    /**
+     *
+     * @param cloud
+     * @param file
+     */
+    void SavePcdFile(const PCPtr<PointT>& cloud, const std::string& file) const;
 
-    static PCPtr<PointT> LoadPcd(const std::string& file);
+    /**
+     *
+     * @param file
+     * @return
+     */
+    PCPtr<PointT> ReadPcdFile(const std::string& file) const;
 
-    static std::vector<boost::filesystem::path> StreamPcd(const std::string& data_path);
+    /**
+     *
+     * @param data_path
+     * @return
+     */
+    std::vector<boost::filesystem::path> ListPcdFiles(const std::string& data_path) const;
 
   };
 
 
-  template<typename PointT, bool use_pcl>
-  size_t PointCloudProcessor<PointT, use_pcl>::NumberOfPointsIn(const PCPtr<PointT>& cloud)
+  template<typename PointT>
+  size_t PointCloudProcessor<PointT>::NumberOfPointsIn(const PCPtr<PointT>& cloud) const
   {
     return cloud->points.size();
   }
 
 
-  template<typename PointT, bool use_pcl>
+  template<typename PointT>
   PCPtr<PointT>
-  PointCloudProcessor<PointT, use_pcl>::FilterCloud(const PCPtr<PointT>& cloud,
+  PointCloudProcessor<PointT>::FilterCloud(const PCPtr<PointT>& cloud,
                                            const double_t voxel_grid_leaf_size,
                                            const Eigen::Vector4f& min_point,
-                                           const Eigen::Vector4f& max_point)
+                                           const Eigen::Vector4f& max_point) const
   {
     // Time the filtering process
     auto startTime = std::chrono::steady_clock::now();
@@ -185,10 +210,10 @@ namespace ser94mor::lidar_obstacle_detection
   }
 
 
-  template<typename PointT, bool use_pcl>
+  template<typename PointT>
   std::pair<PCPtr<PointT>, PCPtr<PointT>>
-  PointCloudProcessor<PointT, use_pcl>::SeparateClouds(
-      const pcl::PointIndices::Ptr& inliers, const PCPtr<PointT>& cloud)
+  PointCloudProcessor<PointT>::SeparateClouds(
+      const pcl::PointIndices::Ptr& inliers, const PCPtr<PointT>& cloud) const
   {
     // Two new point clouds, one cloud with obstacles and other with segmented plane
     PCPtr<PointT> road_cloud{new pcl::PointCloud<PointT>()};
@@ -211,17 +236,17 @@ namespace ser94mor::lidar_obstacle_detection
   }
 
 
-  template<typename PointT, bool use_pcl>
+  template<typename PointT>
   std::pair<PCPtr<PointT>, PCPtr<PointT>>
-  PointCloudProcessor<PointT, use_pcl>::SegmentPlane(
-      const PCPtr<PointT>& cloud, const size_t max_iterations, const double_t distance_threshold)
+  PointCloudProcessor<PointT>::SegmentPlane(
+      const PCPtr<PointT>& cloud, const size_t max_iterations, const double_t distance_threshold) const
   {
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
     // indices of points belonging to the road
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
 
-    if constexpr(use_pcl)
+    if (use_pcl_)
     {
       pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
       // Create the segmentation object
@@ -262,10 +287,10 @@ namespace ser94mor::lidar_obstacle_detection
   }
 
 
-  template<typename PointT, bool use_pcl>
+  template<typename PointT>
   std::vector<PCPtr<PointT>>
-  PointCloudProcessor<PointT, use_pcl>::Clustering(
-      const PCPtr<PointT>& cloud, const double_t cluster_tolerance, const size_t min_size, const size_t max_size)
+  PointCloudProcessor<PointT>::Clustering(
+      const PCPtr<PointT>& cloud, const double_t cluster_tolerance, const size_t min_size, const size_t max_size) const
   {
     // Time clustering process
     auto startTime = std::chrono::steady_clock::now();
@@ -275,7 +300,7 @@ namespace ser94mor::lidar_obstacle_detection
 
     std::vector<pcl::PointIndices> cluster_indices;
 
-    if constexpr (use_pcl)
+    if (use_pcl_)
     {
       // Creating the KdTree object for the search method of the extraction
       typename pcl::search::KdTree<PointT>::Ptr tree{new pcl::search::KdTree<PointT>{}};
@@ -336,8 +361,8 @@ namespace ser94mor::lidar_obstacle_detection
   }
 
 
-  template<typename PointT, bool use_pcl>
-  Box PointCloudProcessor<PointT, use_pcl>::BoundingBox(const PCPtr<PointT>& cluster_cloud)
+  template<typename PointT>
+  Box PointCloudProcessor<PointT>::BoundingBox(const PCPtr<PointT>& cluster_cloud) const
   {
 
     // Find bounding box for one of the clusters
@@ -351,39 +376,41 @@ namespace ser94mor::lidar_obstacle_detection
   }
 
 
-  template<typename PointT, bool use_pcl>
-  void PointCloudProcessor<PointT, use_pcl>::SavePcd(const PCPtr<PointT>& cloud, const std::string& file)
+  template<typename PointT>
+  void PointCloudProcessor<PointT>::SavePcdFile(const PCPtr<PointT>& cloud, const std::string& file) const
   {
     pcl::io::savePCDFileASCII(file, *cloud);
-    std::cerr << "Saved " << cloud->points.size() << " data points to " + file << std::endl;
+    std::cout << "[PointCloudProcessor<PointT>::SavePcdFile] Saved "
+              << cloud->points.size() << " data points to " << file << std::endl;
   }
 
 
-  template<typename PointT, bool use_pcl>
-  PCPtr<PointT> PointCloudProcessor<PointT, use_pcl>::LoadPcd(const std::string& file)
+  template<typename PointT>
+  PCPtr<PointT> PointCloudProcessor<PointT>::ReadPcdFile(const std::string& file) const
   {
 
     PCPtr<PointT> cloud(new pcl::PointCloud<PointT>{});
 
-    if (pcl::io::loadPCDFile<PointT>(file, *cloud) == -1) //* load the file
+    if (pcl::io::loadPCDFile<PointT>(file, *cloud) == -1)
     {
       PCL_ERROR("Couldn't read file \n");
     }
-    std::cerr << "Loaded " << cloud->points.size() << " data points from " + file << std::endl;
+    std::cout << "[PointCloudProcessor<PointT>::ReadPcdFile] Loaded "
+              << cloud->points.size() << " data points from " << file << std::endl;
 
     return cloud;
   }
 
 
-  template<typename PointT, bool use_pcl>
-  std::vector<boost::filesystem::path> PointCloudProcessor<PointT, use_pcl>::StreamPcd(const std::string& data_path)
+  template<typename PointT>
+  std::vector<boost::filesystem::path> PointCloudProcessor<PointT>::ListPcdFiles(const std::string& data_path) const
   {
 
     std::vector<boost::filesystem::path> paths(boost::filesystem::directory_iterator{data_path},
                                                boost::filesystem::directory_iterator{});
 
     // sort files in ascending (chronological) order
-    sort(paths.begin(), paths.end());
+    std::sort(paths.begin(), paths.end());
 
     return paths;
   }
