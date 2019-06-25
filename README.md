@@ -62,6 +62,6 @@ and k-d tree algorithms presented in this repository will be used.
 
 ### Results Description
 On the upper side in the [Demo](#demo) section, the initial (unprocessed)
- point clouds are presented. On the lower side, there are processed point
-  clouds, with identified and clustered points belonging to obstacles 
-  (cars, road signs, bicyclists). Bounding boxes illustrate this separation.
+point clouds are presented. On the lower side, there are processed point
+clouds, with identified and clustered points belonging to obstacles 
+(cars, road signs, bicyclists). Bounding boxes illustrate this separation.
