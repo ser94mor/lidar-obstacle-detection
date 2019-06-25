@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     // Load pcd and run obstacle detection process
     input_cloud = point_processor.ReadPcdFile(streamIterator->string());
     ProcessAndRenderPointCloud(renderer, point_processor, input_cloud);
-    //renderPointCloud(viewer,input_cloud,"planeCloud");
+    //renderer.RenderPointCloud(input_cloud, "planeCloud");
 
     streamIterator++;
     if(streamIterator == stream.end())
