@@ -21,7 +21,7 @@
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "../src/kd_tree.hpp"
+#include "../src/KDTree.hpp"
 
 #include <iostream>
 #include <catch.hpp>
@@ -29,7 +29,7 @@
 using namespace ser94mor::lidar_obstacle_detection;
 
 
-TEST_CASE("KDTree<2>::Insert", "[kd_tree]")
+TEST_CASE("KDTree<2>::Insert", "[KDTree]")
 {
   using point_type = typename KDTree<2>::point_type;
   using vector_type = point_type::vector_type;
@@ -58,7 +58,7 @@ TEST_CASE("KDTree<2>::Insert", "[kd_tree]")
   REQUIRE(tree.Root()->Right()->Right()->Right() == nullptr);
 }
 
-TEST_CASE("KDTree<3>::Insert", "[kd_tree]")
+TEST_CASE("KDTree<3>::Insert", "[KDTree]")
 {
   using point_type = typename KDTree<3>::point_type;
   using vector_type = point_type::vector_type;
@@ -90,7 +90,7 @@ TEST_CASE("KDTree<3>::Insert", "[kd_tree]")
 }
 
 
-TEST_CASE("KDTree<2>::Search", "[kd_tree]")
+TEST_CASE("KDTree<2>::Search", "[KDTree]")
 {
   using point_type = typename KDTree<2, uint64_t>::point_type;
   using vector_type = point_type::vector_type;
@@ -109,7 +109,7 @@ TEST_CASE("KDTree<2>::Search", "[kd_tree]")
 }
 
 
-TEST_CASE("KDTree<3>::Search", "[kd_tree]")
+TEST_CASE("KDTree<3>::Search", "[KDTree]")
 {
   using point_type = typename KDTree<3, uint64_t>::point_type;
   using vector_type = point_type::vector_type;
